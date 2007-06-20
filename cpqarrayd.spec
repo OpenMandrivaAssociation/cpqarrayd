@@ -19,7 +19,7 @@ BuildRequires:	libopenssl-devel
 # This is a hack to force the use of kernel-source rather than
 # kernel-source-stripped. Should be replaced by something more elegant
 # once kernel provides are saner. -AdamW 2007/06
-BuildRequires:	kernel-source-latest
+BuildRequires:	kernel-source-2.6.17.13mdv
 BuildRequires:	libtool
 BuildRequires:	autoconf >= 2.50
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-buildroot
