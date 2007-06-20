@@ -17,6 +17,8 @@ Requires:	net-snmp
 BuildRequires:	net-snmp-devel
 BuildRequires:	libopenssl-devel
 BuildRequires:	kernel-source
+# drop this when we have better kernel package provides, it's ugly - AdamW 2007/06
+BuildConflicts:	kernel-source-stripped
 BuildRequires:	libtool
 BuildRequires:	autoconf >= 2.50
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-buildroot
