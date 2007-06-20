@@ -1,7 +1,11 @@
+%define name	cpqarrayd
+%define version	2.2
+%define release %mkrel 6
+
 Summary:	Monitors SmartArray controllers and notifies via SNMP and syslog
-Name:		cpqarrayd
-Version:	2.2
-Release:	%mkrel 5
+Name:		%{name}
+Version:	%{version}
+Release:	%{release}
 License:	GPL
 Group:		System/Servers
 URL:		http://www.strocamp.net/opensource/
@@ -14,7 +18,7 @@ BuildRequires:	net-snmp-devel
 BuildRequires:	libopenssl-devel
 BuildRequires:	kernel-source
 BuildRequires:	libtool
-BuildRequires:	autoconf2.5
+BuildRequires:	autoconf >= 2.50
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 
 %description
@@ -31,7 +35,7 @@ rm -rf .deps
 rm -f configure
 libtoolize --force --copy; aclocal; autoheader; automake --add-missing --copy --foreign; autoconf
 
-%configure2_5x \
+%configure \
     --with-kernel=/usr/src/linux
 
 %make
