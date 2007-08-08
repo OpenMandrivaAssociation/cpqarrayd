@@ -1,11 +1,7 @@
-%define name	cpqarrayd
-%define version	2.2
-%define release %mkrel 6
-
 Summary:	Monitors SmartArray controllers and notifies via SNMP and syslog
-Name:		%{name}
-Version:	%{version}
-Release:	%{release}
+Name:		cpqarrayd
+Version:	2.2
+Release:	%mkrel 7
 License:	GPL
 Group:		System/Servers
 URL:		http://www.strocamp.net/opensource/
@@ -15,11 +11,8 @@ Requires(post): rpm-helper
 Requires(preun): rpm-helper
 Requires:	net-snmp
 BuildRequires:	net-snmp-devel
-BuildRequires:	libopenssl-devel
-# This is a hack to force the use of kernel-source rather than
-# kernel-source-stripped. Should be replaced by something more elegant
-# once kernel provides are saner. -AdamW 2007/06
-BuildRequires:	kernel-source-2.6.17.13mdv
+BuildRequires:	openssl-devel
+BuildRequires:	kernel-source
 BuildRequires:	libtool
 BuildRequires:	autoconf >= 2.50
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-buildroot
@@ -72,4 +65,3 @@ rm -rf %{buildroot}
 %attr(0644,root,root) %config(noreplace) %{_sysconfdir}/sysconfig/cpqarrayd
 %{_sbindir}/cpqarrayd
 %{_mandir}/man1/cpqarrayd.1*
-
