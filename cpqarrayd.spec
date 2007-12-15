@@ -1,12 +1,12 @@
 Summary:	Monitors SmartArray controllers and notifies via SNMP and syslog
 Name:		cpqarrayd
-Version:	2.2
-Release:	%mkrel 7
+Version:	2.3
+Release:	%mkrel 1
 License:	GPL
 Group:		System/Servers
 URL:		http://www.strocamp.net/opensource/
 Source0:	http://www.strocamp.net/opensource/compaq/downloads/%{name}-%{version}.tar.bz2
-Patch0:		cpqarrayd-2.2-debian.diff
+#Patch0:		cpqarrayd-2.2-debian.diff
 Requires(post): rpm-helper
 Requires(preun): rpm-helper
 Requires:	net-snmp
@@ -24,7 +24,7 @@ traps and via syslog.
 %prep
 
 %setup -q
-%patch -p1
+#%patch -p1
 
 %build
 rm -rf .deps
@@ -60,7 +60,7 @@ rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root)
-%doc AUTHORS ChangeLog INSTALL NEWS README
+%doc AUTHORS ChangeLog NEWS README
 %attr(0755,root,root) %{_initrddir}/cpqarrayd
 %attr(0644,root,root) %config(noreplace) %{_sysconfdir}/sysconfig/cpqarrayd
 %{_sbindir}/cpqarrayd
