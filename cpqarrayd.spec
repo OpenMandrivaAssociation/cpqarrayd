@@ -15,7 +15,6 @@ BuildRequires:	openssl-devel
 BuildRequires:	kernel-source
 BuildRequires:	libtool
 BuildRequires:	autoconf >= 2.50
-BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 
 %description
 Cpqarrayd monitors SmartArray controllers for you and notifies by sending SNMP
