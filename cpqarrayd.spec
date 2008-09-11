@@ -1,12 +1,11 @@
 Summary:	Monitors SmartArray controllers and notifies via SNMP and syslog
 Name:		cpqarrayd
 Version:	2.3
-Release:	%mkrel 2
+Release:	%mkrel 3
 License:	GPL
 Group:		System/Servers
 URL:		http://www.strocamp.net/opensource/
 Source0:	http://www.strocamp.net/opensource/compaq/downloads/%{name}-%{version}.tar.bz2
-#Patch0:		cpqarrayd-2.2-debian.diff
 Requires(post): rpm-helper
 Requires(preun): rpm-helper
 Requires:	net-snmp
@@ -18,13 +17,21 @@ BuildRequires:	autoconf >= 2.50
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 
 %description
-Cpqarrayd monitors SmartArray controllers for you and notifies by sending SNMP
-traps and via syslog.
+This tool can run on a linux based intel box with a smart array controller from
+Compaq. It reports status changes in the disks both to the syslog and to a snmp
+trap host. The default is to only log to the syslog. You can specify traphosts
+with the -t parameter at the commandline. Multiple traphosts are allowed. It
+checks for valid input, but any errors are non-fatal, in fact the traphost is
+just ignored. To ensure correct opereration compile it for the same kernel that
+runs on the machine where you want to use this. At least make sure that the
+version of the SmartArray driver is the same. Strange things can happen
+otherwise.
 
 %prep
 
 %setup -q
-#%patch -p1
+
+chmod 644 AUTHORS ChangeLog NEWS README
 
 %build
 rm -rf .deps
