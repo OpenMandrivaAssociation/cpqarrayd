@@ -6,6 +6,7 @@ License:	GPL
 Group:		System/Servers
 URL:		http://www.strocamp.net/opensource/
 Source0:	http://www.strocamp.net/opensource/compaq/downloads/%{name}-%{version}.tar.bz2
+Patch0:		cpqarrayd-2.3-fix-str-fmt.patch
 Requires(post): rpm-helper
 Requires(preun): rpm-helper
 Requires:	net-snmp
@@ -13,7 +14,6 @@ BuildRequires:	net-snmp-devel
 BuildRequires:	openssl-devel
 BuildRequires:	kernel-source
 BuildRequires:	libtool
-BuildRequires:	autoconf >= 2.50
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 
 %description
@@ -30,15 +30,17 @@ otherwise.
 %prep
 
 %setup -q
+%patch0 -p0
 
 chmod 644 AUTHORS ChangeLog NEWS README
 
 %build
 rm -rf .deps
 rm -f configure
-libtoolize --force --copy; aclocal; autoheader; automake --add-missing --copy --foreign; autoconf
+#libtoolize --force --copy; aclocal; autoheader; automake --add-missing --copy --foreign; autoconf
+autoreconf -fiv
 
-%configure \
+%configure2_5x \
     --with-kernel=/usr/src/linux
 
 %make
