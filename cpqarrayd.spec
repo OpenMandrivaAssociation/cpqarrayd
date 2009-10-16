@@ -1,12 +1,14 @@
 Summary:	Monitors SmartArray controllers and notifies via SNMP and syslog
 Name:		cpqarrayd
 Version:	2.3
-Release:	%mkrel 6
+Release:	%mkrel 7
 License:	GPL
 Group:		System/Servers
 URL:		http://www.strocamp.net/opensource/
 Source0:	http://www.strocamp.net/opensource/compaq/downloads/%{name}-%{version}.tar.bz2
-Patch0:		cpqarrayd-2.3-fix-str-fmt.patch
+Patch0:		cpqarrayd-2.3.no_ida.patch
+Patch1:		cpqarrayd-2.3-message-overrun.patch
+Patch2:		cpqarrayd-2.3-fix-str-fmt.patch
 Requires(post): rpm-helper
 Requires(preun): rpm-helper
 Requires:	net-snmp
@@ -30,7 +32,9 @@ otherwise.
 %prep
 
 %setup -q
-%patch0 -p0
+%patch0 -p1 -b .no_ida
+%patch1 -p1 -b .message-overrun
+%patch2 -p0
 
 chmod 644 AUTHORS ChangeLog NEWS README
 
