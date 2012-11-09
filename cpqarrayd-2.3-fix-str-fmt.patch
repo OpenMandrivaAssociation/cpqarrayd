@@ -1,0 +1,23 @@
+--- status.c	2009-10-16 14:30:17.000000000 +0200
++++ status.c.oden	2009-10-16 14:33:22.000000000 +0200
+@@ -247,7 +247,7 @@ int cciss_status_check (struct opts opts
+ 		    event->detail.logstatchange.logicaldrivenumber,
+ 		    logicaldrivestatusstr[event->detail.logstatchange.newlogicaldrivestate]) > 0) {
+ 	  status = event->detail.logstatchange.newlogicaldrivestate;
+-	  syslog(LOG_WARNING, statusmsg);
++	  syslog(LOG_WARNING, "%s", statusmsg);
+ 	  if (opts.debug) {
+ 	    printf ("%s\n", statusmsg);
+ 	  }
+@@ -274,9 +274,9 @@ int cciss_status_check (struct opts opts
+ 		    ctrls_found[ctrl_cntr].devicefile,
+ 		    event->mesgstring) > 0) {
+ 	  status = 255;
+-	  syslog(LOG_WARNING, statusmsg);
++	  syslog(LOG_WARNING, "%s", statusmsg);
+ 	  if (opts.debug) {
+-	    printf (statusmsg);
++	    printf ("%s\n", statusmsg);
+ 	  }
+ 	  if (trap_stat = sendtrap(opts, "public", status, statusmsg)) {
+ 	    syslog(LOG_WARNING, 

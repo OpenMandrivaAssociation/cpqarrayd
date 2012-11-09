@@ -1,0 +1,306 @@
+diff -ruN cpqarrayd-2.3-save/cciss_functions.c cpqarrayd-2.3/cciss_functions.c
+--- cpqarrayd-2.3-save/cciss_functions.c	2007-12-03 17:06:22.000000000 +0000
++++ cpqarrayd-2.3/cciss_functions.c	2009-08-27 09:34:23.000000000 +0100
+@@ -161,17 +161,18 @@
+ 	iocommand.buf = buffer;
+ 
+ 	result = ioctl (device_fd, CCISS_PASSTHRU, &iocommand);
+-	if (result < 0)
+-	{
++	if (result < 0) {
+ 		perror (" * ioctl failed");
+ 		return -1;
+ 	}
+ 
+ 	if (iocommand.error_info.CommandStatus == 1) {
+ 		printf (" * Command succeeded with dataoverrun (code %d)\n", iocommand.error_info.CommandStatus);
++		return 1;
+ 	}
+ 	else if (iocommand.error_info.CommandStatus == 2) {
+ 		printf (" * Command succeeded with dataunderrun (code %d)\n", iocommand.error_info.CommandStatus);
++		return 2;
+ 	}
+ 	else if (iocommand.error_info.CommandStatus != 0)
+ 	{
+diff -ruN cpqarrayd-2.3-save/cciss_structs.h cpqarrayd-2.3/cciss_structs.h
+--- cpqarrayd-2.3-save/cciss_structs.h	2005-12-16 11:17:44.000000000 +0000
++++ cpqarrayd-2.3/cciss_structs.h	2009-08-27 09:34:23.000000000 +0100
+@@ -37,9 +37,9 @@
+ #define CISS_MAX_PHYS_LUN       1024
+ 
+ #define CompareEvent(event,par_class,par_subclass,par_detail) \
+-                     ((event.class.class==par_class) && \
+-					 (event.class.subclass == par_subclass) && \
+-					 (event.class.detail == par_detail))
++                     ((event->class.class==par_class) && \
++					 (event->class.subclass == par_subclass) && \
++					 (event->class.detail == par_detail))
+ 
+ #pragma pack(1) /* these structures must be byte aligned */
+ typedef struct _cciss_event_physicaldrivechange {
+diff -ruN cpqarrayd-2.3-save/discover.c cpqarrayd-2.3/discover.c
+--- cpqarrayd-2.3-save/discover.c	2009-08-26 21:37:55.000000000 +0100
++++ cpqarrayd-2.3/discover.c	2009-08-27 09:35:03.000000000 +0100
+@@ -300,7 +300,7 @@
+ int cciss_interrogate_controller (struct opts opts, const char *devicefile) {
+   int devicefd;
+   cciss_report_logicallun_struct logicalluns;
+-  cciss_event_type event;
++  cciss_event_type *event;
+   int listlength = 0;
+   int result;
+   
+@@ -328,13 +328,14 @@
+   if (opts.verbose) printf("  Found a CCISS Controller (%d Logical drives)\n",
+ 			   ctrls_found[ctrls_found_num].num_logd_found);
+ 
+-  result = cciss_get_event(devicefd, 1, &event);
++  event = malloc(sizeof(cciss_event_type));
++  result = cciss_get_event(devicefd, 1, event);
+   while (!CompareEvent(event,0,0,0)) {
+     printf ("DEBUG: Discarding old event %d/%d/%d\n",
+-	    event.class.class, event.class.subclass, event.class.detail);
+-    result = cciss_get_event(devicefd, 0, &event);
++	    event->class.class, event->class.subclass, event->class.detail);
++    result = cciss_get_event(devicefd, 0, event);
+   }
+-
++  free(event);
+   close (devicefd);
+ 
+   ctrls_found_num++;
+diff -ruN cpqarrayd-2.3-save/status.c cpqarrayd-2.3/status.c
+--- cpqarrayd-2.3-save/status.c	2009-08-26 21:37:55.000000000 +0100
++++ cpqarrayd-2.3/status.c	2009-08-27 09:34:23.000000000 +0100
+@@ -27,6 +27,7 @@
+ #include <unistd.h>
+ #include <fcntl.h>
+ #include <stdio.h>
++#include <errno.h>
+ #include <string.h>
+ #if defined(HAVE_LINUX_COMPILER_H)
+   #include <linux/compiler.h>
+@@ -59,7 +60,7 @@
+   ida_ioctl_t io, io2;
+   int status, nr_blks, blks_tr, trap_stat;
+   float pvalue;
+-  char statusmsg[1024];
++  char *statusmsg;
+   int counter;
+   
+     
+@@ -135,19 +136,26 @@
+ 		    ctrls_found[ctrl_cntr].log_disk[logd_cntr].status, status,
+ 		    pvalue);
+ 	  }
+-	  sprintf(statusmsg, statusstr[status], ctrl_cntr, logd_cntr, pvalue);
+-	  if (opts.debug) {
+-	      printf("DEBUG: sending traps.\n");
+-	  }
+-	  /* Send a trap, syslog if send_trap returns !0. */
+-	  if (trap_stat = sendtrap(opts, "beheer", status, statusmsg)) {
+-	    syslog(LOG_WARNING, 
+-		   "problem sending snmp trap (sendtrap() returned %d)\n",
+-		   trap_stat);
++	  if (asprintf(&statusmsg, statusstr[status], ctrl_cntr, logd_cntr, pvalue) > 0) {
+ 	    if (opts.debug) {
+-	      printf("DEBUG: Problem sending snmp trap",
+-		     "(sendtrap() returned %d)\n", 
++	      printf("DEBUG: sending traps.\n");
++	    }
++	    /* Send a trap, syslog if send_trap returns !0. */
++	    if (trap_stat = sendtrap(opts, "beheer", status, statusmsg)) {
++	      syslog(LOG_WARNING, 
++		     "problem sending snmp trap (sendtrap() returned %d)\n",
+ 		     trap_stat);
++	      if (opts.debug) {
++		printf("DEBUG: Problem sending snmp trap",
++		       "(sendtrap() returned %d)\n", 
++		       trap_stat);
++	      }
++	    }
++	    free(statusmsg);
++	  } else {
++	    syslog(LOG_ERR, "Cannot allocate memory for statusmsg");
++	    if (opts.debug) {
++	      printf ("Cannot allocate memory for statusmsg\n");
+ 	    }
+ 	  }
+ 	}
+@@ -164,21 +172,28 @@
+ 		    ctrls_found[ctrl_cntr].log_disk[logd_cntr].pvalue,
+ 		    pvalue);
+ 	  }
+-	  sprintf(statusmsg, statusstr[status], ctrl_cntr, logd_cntr, pvalue);
+-	  if (opts.debug) {
+-	      printf("DEBUG: sending traps.\n");
+-	  }
+-	  if (trap_stat = sendtrap(opts, "beheer", status, statusmsg)) {
+-	    syslog(LOG_WARNING,
+-		   "problem sending snmp trap (sendtrap() returned %d)\n",
+-		   trap_stat);
++	  if (asprintf(&statusmsg, statusstr[status], ctrl_cntr, logd_cntr, pvalue) > 0) {
+ 	    if (opts.debug) {
+-	      printf("DEBUG: Problem sending snmp trap ",
+-		     "(sendtrap() returned %d)\n",
++	      printf("DEBUG: sending traps.\n");
++	    }
++	    if (trap_stat = sendtrap(opts, "beheer", status, statusmsg)) {
++	      syslog(LOG_WARNING,
++		     "problem sending snmp trap (sendtrap() returned %d)\n",
+ 		     trap_stat);
++	      if (opts.debug) {
++		printf("DEBUG: Problem sending snmp trap ",
++		       "(sendtrap() returned %d)\n",
++		       trap_stat);
++	      }
++	    }
++	    free(statusmsg);
++	    ctrls_found[ctrl_cntr].log_disk[logd_cntr].pvalue = pvalue;
++	  } else {
++	    syslog(LOG_ERR, "Cannot allocate memory for statusmsg");
++	    if (opts.debug) {
++	      printf ("Cannot allocate memory for statusmsg\n");
+ 	    }
+ 	  }
+-	  ctrls_found[ctrl_cntr].log_disk[logd_cntr].pvalue = pvalue;
+ 	}
+ 	ctrls_found[ctrl_cntr].log_disk[logd_cntr].status = status;
+     }
+@@ -198,73 +213,96 @@
+   int logd_cntr;
+   int status, nr_blks, blks_tr, trap_stat;
+   float pvalue;
+-  char statusmsg[1024];
++  char *statusmsg;
+   int counter;
+-  cciss_event_type event;
++  cciss_event_type *event;
+   
+     
+-  for ( ctrl_cntr=0;
+-        ctrl_cntr <  ctrls_found_num;
+-        ctrl_cntr++) {
++  for ( ctrl_cntr=0; ctrl_cntr <  ctrls_found_num; ctrl_cntr++) {
++
+     if (ctrls_found[ctrl_cntr].ctrl_type != CTRLTYPE_CCISS) {
+       break;
+     }
+ 
+-    devicefd = open (ctrls_found[ctrl_cntr].devicefile, O_RDONLY);
++    if (opts.debug) {
++      printf ("Open device %s\n", ctrls_found[ctrl_cntr].devicefile);
++    }
++
++    if ((devicefd = open (ctrls_found[ctrl_cntr].devicefile, O_RDONLY)) == -1) {
++      syslog(LOG_ERR, "Cannot open %s because %s", ctrls_found[ctrl_cntr].devicefile, strerror(errno));
++      if (opts.debug) {
++	printf ("Cannot open %s because %s", ctrls_found[ctrl_cntr].devicefile, strerror(errno));
++      }
++      continue;
++    }
+     
+-    result = cciss_get_event(devicefd, 0, &event);
++    event = malloc(sizeof(cciss_event_type));
++    result = cciss_get_event(devicefd, 0, event);
+     while (!CompareEvent(event,0,0,0)) {
+       printf ("DEBUG: Got event %d/%d/%d\n",
+-	      event.class.class, event.class.subclass, event.class.detail);
++	      event->class.class, event->class.subclass, event->class.detail);
+       if (CompareEvent(event,5,0,0)) {
+-	snprintf(statusmsg, 2048, "CCISS controler %s logical volume %d changed state to %s.",
+-		 ctrls_found[ctrl_cntr].devicefile,
+-		 event.detail.logstatchange.logicaldrivenumber,
+-		 logicaldrivestatusstr[event.detail.logstatchange.newlogicaldrivestate]);
+-	status = event.detail.logstatchange.newlogicaldrivestate;
+-	syslog(LOG_WARNING, statusmsg);
+-	if (opts.debug) {
+-	  printf (statusmsg);
+-	}
+-	if (trap_stat = sendtrap(opts, "public", status, statusmsg)) {
+-	  syslog(LOG_WARNING, 
+-		 "problem sending snmp trap (sendtrap() returned %d)\n",
+-		 trap_stat);
++	if(asprintf(&statusmsg, "CCISS controler %s logical volume %d changed state to %s.",
++		    ctrls_found[ctrl_cntr].devicefile,
++		    event->detail.logstatchange.logicaldrivenumber,
++		    logicaldrivestatusstr[event->detail.logstatchange.newlogicaldrivestate]) > 0) {
++	  status = event->detail.logstatchange.newlogicaldrivestate;
++	  syslog(LOG_WARNING, statusmsg);
+ 	  if (opts.debug) {
+-	    printf("DEBUG: Problem sending snmp trap",
+-		   "(sendtrap() returned %d)\n", 
++	    printf ("%s\n", statusmsg);
++	  }
++	  if (trap_stat = sendtrap(opts, "public", status, statusmsg)) {
++	    syslog(LOG_WARNING, 
++		   "problem sending snmp trap (sendtrap() returned %d)\n",
+ 		   trap_stat);
++	    if (opts.debug) {
++	      printf("DEBUG: Problem sending snmp trap",
++		     "(sendtrap() returned %d)\n", 
++		     trap_stat);
++	    }
++	  }
++	  free(statusmsg);
++	} else {
++	  syslog(LOG_ERR, "Cannot allocate memory for statusmsg");
++	  if (opts.debug) {
++	    printf ("Cannot allocate memory for statusmsg\n");
+ 	  }
+ 	}
+       }
+       else {
+-	snprintf(statusmsg, 2048, "CCISS controler %s reported: %s.",
+-		 ctrls_found[ctrl_cntr].devicefile,
+-		 event.mesgstring);
+-	status = 255;
+-	syslog(LOG_WARNING, statusmsg);
+-	if (opts.debug) {
+-	  printf (statusmsg);
+-	}
+-	if (trap_stat = sendtrap(opts, "public", status, statusmsg)) {
+-	  syslog(LOG_WARNING, 
+-		 "problem sending snmp trap (sendtrap() returned %d)\n",
+-		 trap_stat);
++	if(asprintf(statusmsg, "CCISS controler %s reported: %s.",
++		    ctrls_found[ctrl_cntr].devicefile,
++		    event->mesgstring) > 0) {
++	  status = 255;
++	  syslog(LOG_WARNING, statusmsg);
+ 	  if (opts.debug) {
+-	    printf("DEBUG: Problem sending snmp trap",
+-		   "(sendtrap() returned %d)\n", 
++	    printf (statusmsg);
++	  }
++	  if (trap_stat = sendtrap(opts, "public", status, statusmsg)) {
++	    syslog(LOG_WARNING, 
++		   "problem sending snmp trap (sendtrap() returned %d)\n",
+ 		   trap_stat);
++	    if (opts.debug) {
++	      printf("DEBUG: Problem sending snmp trap",
++		     "(sendtrap() returned %d)\n", 
++		     trap_stat);
++	    }
++	  }
++	  free(statusmsg);
++	} else {
++	  syslog(LOG_ERR, "Cannot allocate memory for statusmsg");
++	  if (opts.debug) {
++	    printf ("Cannot allocate memory for statusmsg\n");
+ 	  }
+ 	}
+       }
+-      result = cciss_get_event(devicefd, 0, &event);
++      result = cciss_get_event(devicefd, 0, event);
+     }
+-
++    free(event);
+     close (devicefd);
+   }
+ 
+   return 1;
+- 
+ }
+ 
+ 

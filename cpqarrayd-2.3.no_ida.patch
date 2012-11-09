@@ -1,0 +1,196 @@
+diff -up cpqarrayd-2.3/status.c.no_ida cpqarrayd-2.3/status.c
+--- cpqarrayd-2.3/status.c.no_ida	2007-12-03 19:06:22.000000000 +0200
++++ cpqarrayd-2.3/status.c	2008-07-18 11:43:59.000000000 +0300
+@@ -33,9 +33,13 @@
+ #endif
+ 
+ #include <sys/ioctl.h>
++
++#ifdef HAVE_IDA
+ #include <ida_ioctl.h>
+ #include <ida_cmd.h>
+ #include <cpqarray.h>
++#endif
++
+ #include <syslog.h>
+ 
+ #include "cpqarrayd.h"
+@@ -45,7 +49,8 @@
+ #include "cciss_structs.h"
+ #include "cciss_functions.h"
+ 
+-int status_check (struct opts opts) 
++#ifdef HAVE_IDA
++int status_check (struct opts opts)
+ {
+   
+   int devicefd;
+@@ -183,6 +188,7 @@ int status_check (struct opts opts) 
+   return 1;
+  
+ }
++#endif
+ 
+ int cciss_status_check (struct opts opts) 
+ {
+@@ -190,7 +196,6 @@ int cciss_status_check (struct opts opts
+   int devicefd;
+   int ctrl_cntr, result;
+   int logd_cntr;
+-  ida_ioctl_t io, io2;
+   int status, nr_blks, blks_tr, trap_stat;
+   float pvalue;
+   char statusmsg[1024];
+diff -up cpqarrayd-2.3/discover.c.no_ida cpqarrayd-2.3/discover.c
+--- cpqarrayd-2.3/discover.c.no_ida	2007-12-03 19:06:22.000000000 +0200
++++ cpqarrayd-2.3/discover.c	2008-07-18 11:49:23.000000000 +0300
+@@ -33,12 +33,14 @@
+   #include <linux/compiler.h>
+ #endif
+ 
++#ifdef WITH_IDA
+ #if defined(__linux__)
+   #include <ida_ioctl.h>
+   #include <ida_ioctl.h>
+   #include <ida_cmd.h>
+   #include <cpqarray.h>
+ #endif
++#endif
+ 
+ #if defined(__freebsd__)
+   #include <idavar.h>
+@@ -52,8 +54,12 @@
+ 
+ 
+ int discover_controllers (struct opts);
++
++#ifdef WITH_IDA
+ int interrogate_controller (struct opts, const char *);
+ int interrogate_logical(struct opts, int, int);
++#endif
++
+ void boardid2str (unsigned long , char *);
+ 
+ /* Added devfs devices 
+@@ -84,6 +90,7 @@ discover_controllers (struct opts opts)
+   int cntr;
+   int foundone = 0;
+ 
++#ifdef WITH_IDA
+   for (cntr = 0; cntr < 8; cntr++)
+     {
+       /* does this device exist ? */
+@@ -104,6 +111,8 @@ discover_controllers (struct opts opts)
+ 	  perror ("DEBUG: reason");
+ 	}
+     }
++#endif
++
+   for (cntr = 0; cntr < 16; cntr++)
+     {
+       /* does this device exist ? */
+@@ -127,6 +136,7 @@ discover_controllers (struct opts opts)
+    return foundone;
+ }
+ 
++#ifdef WITH_IDA
+ int
+ interrogate_controller (struct opts opts, const char *devicefile)
+ {
+@@ -227,6 +237,7 @@ interrogate_logical (struct opts opts, i
+ 
+   return 1;
+ }
++#endif
+ 
+ void
+ boardid2str (unsigned long board_id, char *name)
+diff -up cpqarrayd-2.3/configure.ac.no_ida cpqarrayd-2.3/configure.ac
+--- cpqarrayd-2.3/configure.ac.no_ida	2005-12-16 13:17:44.000000000 +0200
++++ cpqarrayd-2.3/configure.ac	2008-07-18 11:41:27.000000000 +0300
+@@ -16,35 +16,35 @@ AC_PROG_MAKE_SET
+ AC_HEADER_STDC
+ AC_CHECK_HEADERS([arpa/inet.h fcntl.h netdb.h netinet/in.h stdlib.h string.h sys/ioctl.h sys/socket.h sys/time.h syslog.h unistd.h])
+ 
+-dnl Check for pathed kernel sources with ida_ioctl.h
+-AC_MSG_CHECKING(for kernel sources)
+-found_kernel_dir=""
+-for kernel_dir in /usr/src/linux /usr/src/linux-2.4
+-do
+-  if test -d $kernel_dir ; then
+-    CFLAGS="$CFLAGS -I$kernel_dir/include -I$kernel_dir/drivers/block"
+-    CPPFLAGS="$CPPFLAGS -I$kernel_dir/include -I$kernel_dir/drivers/block"
+-    found_kernel_dir="$kernel_dir"
+-  fi
+-done
+-
+-if test "$found_kernel_dir" != "" ; then
+-  AC_MSG_RESULT(found $found_kernel_dir )
+-else
+-  AC_MSG_ERROR(Kernel sources not found)
+-fi
++dnl dnl Check for pathed kernel sources with ida_ioctl.h
++dnl AC_MSG_CHECKING(for kernel sources)
++dnl found_kernel_dir=""
++dnl for kernel_dir in /usr/src/linux /usr/src/linux-2.4
++dnl do
++dnl   if test -d $kernel_dir ; then
++dnl     CFLAGS="$CFLAGS -I$kernel_dir/include -I$kernel_dir/drivers/block"
++dnl     CPPFLAGS="$CPPFLAGS -I$kernel_dir/include -I$kernel_dir/drivers/block"
++dnl     found_kernel_dir="$kernel_dir"
++dnl   fi
++dnl done
++
++dnl if test "$found_kernel_dir" != "" ; then
++dnl   AC_MSG_RESULT(found $found_kernel_dir )
++dnl else
++dnl   AC_MSG_ERROR(Kernel sources not found)
++dnl fi
+ 
+ dnl Check for compile.h (2.6.x kernels only?
+ AC_CHECK_HEADERS(linux/compiler.h)
+                                                                        
+-dnl Check Headers
+-AC_CHECK_HEADERS(ida_ioctl.h ida_cmd.h cpqarray.h,, 
+-  AC_MSG_ERROR(You need to have the SmartArray driver in the kernel.))
+-
+-dnl Check version of SmartArray driver
+-AC_MSG_CHECKING(SmartArray driver version)
+-AC_EGREP_HEADER(blk_cnt, ida_ioctl.h,AC_MSG_RESULT(ok), 
+-  AC_MSG_ERROR(You need to have the SmartArray driver version 1.0.1 or higher installed.))
++dnl dnl Check Headers
++dnl AC_CHECK_HEADERS(ida_ioctl.h ida_cmd.h cpqarray.h,, 
++dnl   AC_MSG_ERROR(You need to have the SmartArray driver in the kernel.))
++
++dnl dnl Check version of SmartArray driver
++dnl AC_MSG_CHECKING(SmartArray driver version)
++dnl AC_EGREP_HEADER(blk_cnt, ida_ioctl.h,AC_MSG_RESULT(ok), 
++dnl   AC_MSG_ERROR(You need to have the SmartArray driver version 1.0.1 or higher installed.))
+ 
+ dnl Check for CCISS header file
+ AC_CHECK_HEADERS(linux/cciss_ioctl.h,,
+--- cpqarrayd-2.3/cpqarrayd.c.no_ida	2007-12-03 19:06:22.000000000 +0200
++++ cpqarrayd-2.3/cpqarrayd.c	2008-07-18 13:02:17.000000000 +0300
+@@ -35,9 +35,11 @@
+   #include <linux/compiler.h>
+ #endif
+ 
++#ifdef WITH_IDA
+ #if defined(__linux__)
+   #include <ida_ioctl.h>
+ #endif
++#endif
+ 
+ #if defined(__freebsd__)
+   #include <idavar.h>
+@@ -249,7 +251,10 @@
+   syslog(LOG_INFO, "Logging Enabled...");
+   
+   while (keeprunning) {
++
++#ifdef WITH_IDA
+     status_check(opts);
++#endif
+     cciss_status_check(opts);
+     if (keeprunning) { sleep(30); }
+   }
