@@ -1,0 +1,11 @@
+--- cpqarrayd-2.3/configure.ac.bero	2013-01-15 19:02:11.434763825 +0100
++++ cpqarrayd-2.3/configure.ac	2013-01-15 19:02:16.912697798 +0100
+@@ -2,7 +2,7 @@
+ AC_INIT(cpqarrayd, 2.1, [spark@knoware.nl])
+ AM_INIT_AUTOMAKE(cpqarrayd, 2.1)
+ AC_CONFIG_SRCDIR([cpqarrayd.c])
+-AM_CONFIG_HEADER([config.h])
++AC_CONFIG_HEADERS([config.h])
+ 
+ # Checks for programs.
+ AC_PROG_CC

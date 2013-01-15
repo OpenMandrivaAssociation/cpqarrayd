@@ -9,6 +9,7 @@ Source0:	http://www.strocamp.net/opensource/compaq/downloads/%{name}-%{version}.
 Patch0:		cpqarrayd-2.3.no_ida.patch
 Patch1:		cpqarrayd-2.3-message-overrun.patch
 Patch2:		cpqarrayd-2.3-fix-str-fmt.patch
+Patch3:		cpqarrayd-2.3-automake-1.13.patch
 Requires(post): rpm-helper
 Requires(preun): rpm-helper
 Requires:	net-snmp
@@ -35,6 +36,7 @@ otherwise.
 %patch0 -p1 -b .no_ida
 %patch1 -p1 -b .message-overrun
 %patch2 -p0
+%patch3 -p1 -b .am113~
 
 chmod 644 AUTHORS ChangeLog NEWS README
 
