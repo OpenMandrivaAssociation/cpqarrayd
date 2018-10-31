@@ -1,7 +1,7 @@
 Summary:	Monitors SmartArray controllers and notifies via SNMP and syslog
 Name:		cpqarrayd
 Version:	2.3
-Release:	19
+Release:	20
 License:	GPL
 Group:		System/Servers
 URL:		http://www.strocamp.net/opensource/
