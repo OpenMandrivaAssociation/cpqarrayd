@@ -32,7 +32,7 @@ otherwise.
 %prep
 
 %setup -q
-%apply_patches
+%autopatch -p1
 chmod 644 AUTHORS ChangeLog NEWS README
 
 %build
