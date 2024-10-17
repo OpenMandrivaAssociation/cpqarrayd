@@ -4,7 +4,7 @@ Version:	2.3
 Release:	21
 License:	GPL
 Group:		System/Servers
-URL:		http://www.strocamp.net/opensource/
+URL:		https://www.strocamp.net/opensource/
 Source0:	http://www.strocamp.net/opensource/compaq/downloads/%{name}-%{version}.tar.bz2
 Patch0:		cpqarrayd-2.3.no_ida.patch
 Patch1:		cpqarrayd-2.3-message-overrun.patch
