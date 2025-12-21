@@ -11,6 +11,11 @@ Patch1:		cpqarrayd-2.3-message-overrun.patch
 Patch2:		cpqarrayd-2.3-fix-str-fmt.patch
 Patch3:		cpqarrayd-2.3-automake-1.13.patch
 
+BuildRequires:	autoconf
+BuildRequires:	automake
+BuildRequires:	libtool-base
+BuildRequires:	slibtool
+BuildRequires:	make
 BuildRequires:	kernel-source
 BuildRequires:	libtool
 BuildRequires:	net-snmp-devel
